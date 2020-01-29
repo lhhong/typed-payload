@@ -11,7 +11,7 @@ However, due to the channel being multi-purpose, it handles different events and
 One common example is in the case of WebSockets. The following code is typical (ignoring serialization):
 
 ##### Common interface:
-```
+```ts
 interface Payload1 {
   var1: string;
 }
@@ -30,7 +30,7 @@ interface Message2 {
 ```
 
 ##### Producer
-```
+```ts
 const payload1: Payload1 = {
   var1: "value",
 };
@@ -49,7 +49,7 @@ ws.send({
 ```
 
 ##### Consumer:
-```
+```ts
 ws.on("message", (data) => {
   if (data.event === "event 1") {
     // Handle "event 1" using data.payload
@@ -67,7 +67,7 @@ A solution could be to make use of type guards, adding functions to type check `
 ## Solution with typed-payload
 
 ##### Common interface
-```
+```ts
 interface Payload1 {
   var1: string
 }
@@ -80,7 +80,7 @@ const event2 = TypedPayloadFactory.define<Payload2>("event 2")
 ```
 
 ##### Producer
-```
+```ts
 const payload1: Payload1 = {
   var1: "value",
 };
@@ -93,7 +93,7 @@ ws.send(event2.create(payload2));
 ```
 
 ##### Consumer:
-```
+```ts
 ws.on("message", (data) => {
   if (event1.check(data)) {
     // data.payload is now of type Payload1
@@ -111,7 +111,7 @@ Ensures that the payload is indeed of the correct type using your own type guard
 This parameter would usually be useful only in dev or when debugging.
 If you rely on this type guard for production code to work, I would suggest refactoring the message-passing protocol.
 
-```
+```ts
 interface Payload1 {
   var1: string;
 }
@@ -136,7 +136,7 @@ Yes you read it right.
 In some cases, we wish to pass events without payload.
 Although this library provides little value-add for such use cases, the ability to create typed payload without payload can help with a consistent coding style.
 
-```
+```ts
 const event1 = TypedPayloadFactory.defineNoPayload("event 1");
 
 const message = event1.create();
