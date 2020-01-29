@@ -1,0 +1,28 @@
+{
+  "name": "typed-payload",
+  "version": "1.0.0",
+  "description": "Library to provide strong typing for any form of event based payload.",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "test": "jest",
+    "prepare": "tsc"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/lhhong/typed-payload.git"
+  },
+  "keywords": [],
+  "author": "Heok Hong Low",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/lhhong/typed-payload/issues"
+  },
+  "homepage": "https://github.com/lhhong/typed-payload#readme",
+  "devDependencies": {
+    "@types/jest": "^25.1.0",
+    "jest": "^25.1.0",
+    "ts-jest": "^25.0.0",
+    "typescript": "^3.7.5"
+  }
+}
