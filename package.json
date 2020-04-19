@@ -1,6 +1,6 @@
 {
   "name": "typed-payload",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Library to provide strong typing for any form of event based payload.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
