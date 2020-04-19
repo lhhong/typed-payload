@@ -7,6 +7,7 @@ In asynchronous programming, a common design pattern is to have a broker which p
 In a simple implementation, this message-passing goes through a multi-purpose channel (Even in complex implementations, it is often still a multi-purpose channel at the low-level view). 
 It is common to create data types such as `{ event: <event>, payload: <actual message> }` to use the same channel for different events.
 However, due to the channel being multi-purpose, it handles different events and hence difficult to manage typing information of the payload.
+Discriminated union is the first class way to achieve easy typing but it has its limitations as well.
 
 One common example is in the case of WebSockets. The following code is typical (ignoring serialization):
 
@@ -27,6 +28,8 @@ interface Message2 {
   event: "event 2";
   payload: Payload2;
 }
+
+type Message = Message1 | Message2;
 ```
 
 ##### Producer
@@ -39,30 +42,47 @@ ws.send({
   payload: payload1,
 }: Message1);
 
-const payload2: Payload2 = {
-  var2: "value",
-};
-ws.send({
-  event: "event 2",
-  payload: payload2,
-}: Message2);
+...
+
 ```
 
 ##### Consumer:
 ```ts
-ws.on("message", (data) => {
+ws.on("message", (data: Message) => {
   if (data.event === "event 1") {
-    // Handle "event 1" using data.payload
+    // data is of type Message1
   }
   if (data.event === "event 2") {
-    // Handle "event 2" using data.payload
+    // data is of type Message2
   }
+
+  ...
 })
 ```
 
-The consumer will not be able to infer the type of `data.payload` resulting in the need to perform unsafe casting.
+This is still manageable using discriminated unions. 
+However, as the number of events grow, this code is not manageable and some would also want to make use of observer pattern so as to keep things more modular.
+The subscibed function for that event would then need to do a discriminated check.
 
-A solution could be to make use of type guards, adding functions to type check `Message1` or `Message2` but leads to high overhead and error prone type definitions.
+##### Consumer:
+```ts
+function subscribeToEvent(event: string, fn: (data: Message) => void) {
+  eventSubscribers[event].push(fn);
+}
+
+ws.on("message", (data: Message) => {
+  eventSubscribers[data.event].forEach(fn => fn(data));
+});
+
+// Usage anywhere else in the project
+subscribeToEvent("event 1", data => {
+  if (data.event === "event 1") { // redundant but necessary
+    // data is of type Message1
+  }
+});
+```
+
+Even with discriminated union, some of the code can still be quite verbose just to comply with type safety.
 
 ## Solution with typed-payload
 
@@ -86,10 +106,8 @@ const payload1: Payload1 = {
 };
 ws.send(event1.create(payload1));
 
-const payload2: Payload2 = {
-  var2: "value",
-};
-ws.send(event2.create(payload2));
+...
+
 ```
 
 ##### Consumer:
@@ -101,7 +119,28 @@ ws.on("message", (data) => {
   if (event2.check(data)) {
     // data.payload is now of type Payload2
   }
+
+  ...
 })
+```
+
+There is a slight reduction in verbosity and also better compile time check to reduce human errors.
+However, where this library shines is by providing much better type safety over discriminated union in observer pattern.
+
+##### Consumer:
+```ts
+function subscribeToEvent<T>(eventDef: PayloadTypeDef<T>, fn: (payload: T) => void) {
+  eventSubscribers[event].push(fn);
+}
+
+ws.on("message", (data: Message) => {
+  eventSubscribers[data.event].forEach(fn => fn(data.payload));
+});
+
+// Usage anywhere else in the project
+subscribeToEvent(event1, payload => { // notice we can directly deal with Payload instead of Message
+  // payload is of type Payload1
+});
 ```
 
 ## Other usages
@@ -116,7 +155,7 @@ interface Payload1 {
   var1: string;
 }
 function isPayload1(obj: any): obj is Payload1 {
-  return obj.var !== undefined;
+  return obj.var1 !== undefined;
 }
 const event1 = TypedPayloadFactory.define<Payload1>("event 1", isPayload1);
 
